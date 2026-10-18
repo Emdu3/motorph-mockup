@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MotorPH Payroll – Pre-finalization check (mid-fidelity mockup)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f6f6f3;--surface:#fff;--ink:#1d2733;--muted:#5c6773;--line:#d9dcdf;--blue:#2b5c8a;--amber:#a86a0a;--amber-bg:#fbf1dc;--red:#a63232;--red-bg:#f8e3e3;--green:#2b7048;--green-bg:#e2f1e8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161b21;--surface:#1f262e;--ink:#e8ecf0;--muted:#9aa5b1;--line:#34404c;--blue:#7fb0e0;--amber:#e3b45f;--amber-bg:#3a2e14;--red:#f08a8a;--red-bg:#3d1f1f;--green:#7cc99a;--green-bg:#1c3426}}
+:root[data-theme="dark"]{--bg:#161b21;--surface:#1f262e;--ink:#e8ecf0;--muted:#9aa5b1;--line:#34404c;--blue:#7fb0e0;--amber:#e3b45f;--amber-bg:#3a2e14;--red:#f08a8a;--red-bg:#3d1f1f;--green:#7cc99a;--green-bg:#1c3426}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;margin:0 0 2px;font-weight:600}
+.sub{color:var(--muted);margin:0 0 16px}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:16px}
+.bar b{font-weight:600}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px}
+button:focus-visible,tr[tabindex]:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+button.primary[disabled]{opacity:.45;cursor:not-allowed}
+.wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;font-size:13px;color:var(--muted)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--bg)}
+tbody tr.sel{background:var(--bg);box-shadow:inset 3px 0 var(--blue)}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:13px;font-weight:500}
+.ok{background:var(--green-bg);color:var(--green)}
+.warn{background:var(--amber-bg);color:var(--amber)}
+.stop{background:var(--red-bg);color:var(--red)}
+.why{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+#detail{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+#detail h2{font-size:17px;margin:0 0 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
+.cmp{border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.cmp small{color:var(--muted);display:block}
+.cmp.bad{border-color:var(--red);background:var(--red-bg)}
+.empty{color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<h1>Pre-finalization check</h1>
+<p class="sub">Payroll period Oct 1–15 · Sample data for prototype testing only</p>
+
+<div class="bar">
+  <span><b id="count">0 of 4</b> flagged records reviewed before finalizing</span>
+  <button class="primary" id="final" disabled>Finalize payroll</button>
+</div>
+
+<div class="wrap">
+<table>
+<thead><tr><th>Employee</th><th>Department</th><th>Net pay</th><th>Check status</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</div>
+
+<section id="detail" aria-live="polite"><p class="empty">Select an employee to see where each figure comes from.</p></section>
+</main>
+
+<script>
+var data=[
+ {n:"A. Reyes",d:"Sales",pay:"₱24,350",s:"ok",label:"No issues found"},
+ {n:"B. Santos",d:"Logistics",pay:"₱27,910",s:"warn",label:"Needs review",issue:"Hours differ",
+  cmp:[["Hours entered","88 hrs","Payroll sheet",1],["Hours on time card","80 hrs","Time card",0]],note:"8-hour difference affects overtime and gross pay."},
+ {n:"C. Lim",d:"Accounting",pay:"₱31,200",s:"stop",label:"Needs review",issue:"Wrong bonus scheme",
+  cmp:[["Scheme applied","Sales Q3 bonus","Payroll sheet",1],["Scheme for department","Accounting standard bonus","HR pay structures",0]],note:"Bonus structure for another department is applied."},
+ {n:"D. Cruz",d:"Sales",pay:"₱22,780",s:"warn",label:"Needs review",issue:"Leave not recorded",
+  cmp:[["Days paid","11 days","Payroll sheet",1],["Approved leave on file","None","HR leave records",0]],note:"Absence on Oct 9 has no recorded approval."},
+ {n:"E. Dizon",d:"Logistics",pay:"₱26,040",s:"ok",label:"No issues found"},
+ {n:"F. Ramos",d:"Marketing",pay:"₱28,115",s:"stop",label:"Needs review",issue:"Tax deduction changed",
+  cmp:[["Withholding this period","₱3,480","Tax calculation",1],["Withholding last period","₱2,940","Prior payroll",0]],note:"Deduction rose with no change in pay level."}
+];
+var reviewed={};var flagged=data.filter(function(x){return x.s!=="ok"}).length;
+var rows=document.getElementById("rows");
+function tagHtml(x){return '<span class="tag '+(x.s==="ok"?"ok":"warn")+'">'+(reviewed[x.n]?"Reviewed":x.label)+'</span>'}
+function draw(sel){
+ rows.innerHTML="";
+ data.forEach(function(x){
+  var tr=document.createElement("tr");tr.tabIndex=0;
+  if(sel===x.n)tr.className="sel";
+  tr.innerHTML="<td>"+x.n+"</td><td>"+x.d+"</td><td>"+x.pay+"</td><td>"+tagHtml(x)+"</td>";
+  tr.onclick=function(){show(x)};
+  tr.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();show(x)}};
+  rows.appendChild(tr);
+ });
+ var n=Object.keys(reviewed).length;
+ document.getElementById("count").textContent=n+" of "+flagged;
+ document.getElementById("final").disabled=n<flagged;
+}
+function show(x){
+ var el=document.getElementById("detail");
+ if(!x.cmp){el.innerHTML="<h2>"+x.n+"</h2><p class='empty'>All figures match their sources. Nothing to review.</p>";draw(x.n);return}
+ var h="<h2>"+x.n+" · "+x.issue+"</h2><p>"+x.note+"</p><div class='grid'>";
+ x.cmp.forEach(function(c){h+="<div class='cmp"+(c[3]?" bad":"")+"'><small>"+c[2]+"</small><b>"+c[0]+"</b><div>"+c[1]+"</div></div>"});
+ h+="</div>";
+ h+=reviewed[x.n]?"<p class='empty'>Marked as reviewed.</p>":"<button id='mark'>Mark as reviewed</button>";
+ el.innerHTML=h;draw(x.n);
+ var m=document.getElementById("mark");
+ if(m)m.onclick=function(){reviewed[x.n]=true;show(x)};
+}
+document.getElementById("final").onclick=function(){document.getElementById("detail").innerHTML="<h2>Payroll finalized</h2><p class='empty'>All flagged records were reviewed first.</p>"};
+draw();
+</script>
+</body>
+</html>
